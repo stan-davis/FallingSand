@@ -12,8 +12,3 @@ typedef int32_t i32;
 typedef int64_t i64;
 typedef float f32;
 typedef double f64;
-
-typedef struct vec2
-{
-    f32 x, y;
-} vec2;

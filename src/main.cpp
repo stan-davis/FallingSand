@@ -26,7 +26,7 @@ int main(int argc, char** argv)
     //SDL_ShowCursor(SDL_DISABLE);
     bool running = true;
 
-    const char* items[] = {"Empty", "Sand", "Water", "Stone"};
+    const char* items[] = {"Empty", "Sand", "Water", "Stone", "Grass", "Dirt"};
     int current_item = 0;
     int brush_size = 1;
     

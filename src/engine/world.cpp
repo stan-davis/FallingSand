@@ -1,6 +1,9 @@
 #include "world.h"
 #include <cstdio>
 
+#include "utils/smath.h"
+#include <FastNoiseLite.h>
+
 World::World(Renderer* _renderer)
 {
     debug_draw.SetRenderer(_renderer);
@@ -22,6 +25,27 @@ World::World(Renderer* _renderer)
     fixture.friction = 0.3;
 
     body->CreateFixture(&fixture);
+
+    //Terrain
+    FastNoiseLite noise;
+    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+
+    for(u16 y = 0; y < size; y++)
+        for(u16 x = 0; x < size; x++)
+        {
+            u16 amplitude = 10.0;
+            u16 r = rand() % 4 + 1;
+            i32 n1 = std::floor((noise.GetNoise((f32)x, (f32)y) + (amplitude * 0.5)) * amplitude);
+            i32 n2 = std::floor((noise.GetNoise((f32)x + 0.01, (f32)y + 0.01) + (amplitude * 0.5)) * amplitude);
+            i32 n = n1 + n2;
+
+            if(y > n)
+                create_cell(x, y, CellType::GRASS);
+            if(y > n + r)
+                create_cell(x, y, CellType::DIRT);
+        }
+
+    apply_draw();
 }
 
 void World::set_cell(u16 x, u16 y, Cell cell)
@@ -39,10 +63,12 @@ void World::create_cell(u16 x, u16 y, u8 id)
 
     switch(id)
     {
-        case Cell::Type::EMPTY: break;
-        case Cell::Type::SAND: color = {u8(255 - r), u8(255 - r), 0}; break;
-        case Cell::Type::WATER: color = {0, 64, 255}; break;
-        case Cell::Type::STONE: color = {u8(128 - r), u8(128 - r), u8(128 - r)}; break;
+        case CellType::EMPTY: break;
+        case CellType::SAND: color = {u8(255 - r), u8(255 - r), 0}; break;
+        case CellType::WATER: color = {0, 64, 255}; break;
+        case CellType::STONE: color = {u8(128 - r), u8(128 - r), u8(128 - r)}; break;
+        case CellType::GRASS: color = {0, u8(160 - r), u8(64 - r)}; break;
+        case CellType::DIRT: color = {u8(104 - r), u8(64 - r), u8(64 - r)}; break;
     }
 
     Cell cell = {id, color, 0, 0};
@@ -89,7 +115,7 @@ void World::apply_draw()
 
     for(u16 i = 0; i < area; i++)
     {
-        if(draw_canvas[i].id == Cell::Type::STONE)
+        if(draw_canvas[i].id == CellType::STONE)
         {
             arr[i] = draw_canvas[i];
             found = true;
@@ -105,7 +131,7 @@ void World::apply_draw()
     //Apply non-empty cells
     for(u16 i = 0; i < area; i++)
     {
-        if(draw_canvas[i].id != Cell::Type::EMPTY)
+        if(draw_canvas[i].id != CellType::EMPTY)
             cells[i] = draw_canvas[i];
     }
     
@@ -123,7 +149,7 @@ void World::render(Renderer *renderer)
             Cell canvas_cell = draw_canvas[y * size + x];
             u32 c = buffer_cell.color.to_uint();
 
-            if(canvas_cell.id != Cell::Type::EMPTY)
+            if(canvas_cell.id != CellType::EMPTY)
                 c = canvas_cell.color.to_uint();
 
             renderer->draw(x, y, c);
@@ -148,7 +174,7 @@ void World::update_bodies(bool has_ticked)
             {
                 const Cell& cell = rb.cells[y * size + x];
                 
-                if(cell.id == Cell::Type::EMPTY)
+                if(cell.id == CellType::EMPTY)
                     continue;
                 
                 f32 nx = x * c - y * s;
@@ -178,10 +204,9 @@ void World::update(f32 dt)
 
             switch(cell.id)
             {
-                case Cell::Type::EMPTY: break;
-                case Cell::Type::SAND: update_sand(x, y); break;
-                case Cell::Type::WATER: update_water(x, y); break;
-                case Cell::Type::STONE: break;
+                case CellType::SAND: update_sand(x, y); break;
+                case CellType::WATER: update_water(x, y); break;
+                default: break;
             }
         }
     

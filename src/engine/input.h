@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.h"
+#include "utils/types.h"
 #include <SDL.h>
 
 typedef enum MouseState 

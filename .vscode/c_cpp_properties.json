@@ -8,7 +8,8 @@
                 "C:/Libraries/box2d/include/box2d",
                 "ext/imgui",
                 "ext/cpp-marching-squares",
-                "ext/polypartition"
+                "ext/polypartition",
+                "ext/fastnoiselite",
             ],
             "defines": [
                 "_DEBUG",

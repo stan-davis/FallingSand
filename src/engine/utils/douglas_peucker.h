@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <math.h>
-#include "../types.h"
+#include "smath.h"
 
 ///adapted from https://github.com/GiWanPark/DouglasPeucker-Algorithm/blob/master/DouglasPeucker.h
 namespace DouglasPeucker

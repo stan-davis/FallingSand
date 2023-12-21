@@ -16,7 +16,7 @@ Rigidbody::Rigidbody(Cell* _cells, int size, b2World& world)
 
     for(int i = 0; i < area; i++)
     {
-        if(cells[i].id == Cell::Type::STONE)
+        if(cells[i].id == CellType::STONE)
             data[i] = 1;
     }
 
