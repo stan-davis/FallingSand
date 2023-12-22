@@ -7,7 +7,7 @@
 class Rigidbody
 {
     public:
-        Rigidbody(std::vector<Cell> _cells, b2BodyType type, b2World& world);
+        Rigidbody(std::vector<Cell> _cells, b2BodyType type, b2Vec2 world_position, b2World& world);
         ~Rigidbody() = default;
         
         b2Body* body = nullptr;

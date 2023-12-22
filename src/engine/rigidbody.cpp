@@ -4,7 +4,7 @@
 #include "douglas_peucker.h"
 #include <polypartition.h>
 
-Rigidbody::Rigidbody(std::vector<Cell> _cells, b2BodyType type, b2World& world)
+Rigidbody::Rigidbody(std::vector<Cell> _cells, b2BodyType type, b2Vec2 world_position, b2World& world)
 {
     //Init
     cells = _cells;
@@ -77,7 +77,7 @@ Rigidbody::Rigidbody(std::vector<Cell> _cells, b2BodyType type, b2World& world)
     //Create physics body
     b2BodyDef def;
     def.type = type;
-    def.position.Set(0.0, 0.0);
+    def.position.Set(world_position.x, world_position.y);
     body = world.CreateBody(&def);
     
     for(auto& p : result)

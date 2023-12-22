@@ -1,8 +1,7 @@
 #include "chunk.h"
+#include "smath.h"
 
 #include <cstdio>
-
-#include "smath.h"
 #include <FastNoiseLite.h>
 
 Chunk::Chunk(i32 x, i32 y, DebugDraw* debug_draw)
@@ -16,18 +15,29 @@ Chunk::Chunk(i32 x, i32 y, DebugDraw* debug_draw)
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
     
-    u16 amplitude = 10;
-    i32 multiplier = (amplitude * 0.5) * amplitude;
+    u16 amplitude = 40;
+    u8 octaves = 5;
+    f32 lacunarity = 0.75;
 
     for(u16 y = 0; y < size; y++)
         for(u16 x = 0; x < size; x++)
         {
-            u16 r = rand() % 4 + 1;
-            i32 n = std::floor(noise.GetNoise((f32)(world_x + x), (f32)(world_y + y))) + multiplier;
+            i32 tx = world_x + x;
+            i32 ty = world_y + y;
 
-            if(y > n)
+            u16 r = rand() % 4 + 1;
+            i32 depth = 0;
+
+            for(u8 i = 1; i < octaves; i++)
+            {
+                depth += std::ceil(noise.GetNoise((f32)tx / i * lacunarity, (f32)ty / i * lacunarity) * amplitude);
+            }
+
+            depth = std::ceil(depth / octaves);
+
+            if(ty > depth)
                 create_cell(x, y, CellType::GRASS);
-            if(y > n + r)
+            if(ty > depth + r)
                 create_cell(x, y, CellType::DIRT);
         }
 
@@ -81,7 +91,7 @@ void Chunk::apply_draw()
     if(found)
     {
         std::vector<Cell> data(draw_canvas.begin(), draw_canvas.end());
-        Rigidbody rb = Rigidbody(data, type, physics_world);
+        Rigidbody rb = Rigidbody(data, type, {(f32)world_x, (f32)world_y}, physics_world);
         rigidbodies.push_back(rb);
     }
 
@@ -160,8 +170,8 @@ void Chunk::update_bodies(bool has_ticked)
                 f32 ny = x * s + y * c;
 
                 b2Vec2 p = rb.body->GetPosition();
-                u16 px = (u16)(p.x + nx);
-                u16 py = (u16)(p.y + ny);
+                u16 px = (u16)(p.x + nx) - world_x;
+                u16 py = (u16)(p.y + ny) - world_y;
 
                 if(has_ticked)
                     set_cell(px, py, cell);

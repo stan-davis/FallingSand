@@ -5,13 +5,13 @@ void Game::ready()
 {
     debug_draw.SetRenderer(renderer.get());
     debug_draw.SetFlags(b2Draw::e_shapeBit);
-    
-    i32 chunk_size = 120;
 
-    for(i32 x = 0; x < 4; x++)
-        for(i32 y = 0; y < 4; y++)
+    for(i32 x = -world_size; x < world_size; x++)
+        for(i32 y = -world_size; y < world_size; y++)
         {
             Chunk* chunk = new Chunk(x * chunk_size, y * chunk_size, &debug_draw);
+            vec2i pos = {x, y};
+            lookup.insert({pos, chunk});
             chunks.push_back(chunk);
         }
 }
@@ -20,16 +20,19 @@ void Game::update(f32 delta)
 {
     if(Input::is_mouse_held(Input::MouseState::BUTTON_LEFT))
     {
-        i32 x = std::floor(Input::get_mouse_position().x / 4);
-        i32 y = std::floor(Input::get_mouse_position().y / 4);
+        i32 x = std::floor(Input::get_mouse_position().x / 4) - renderer->camera_x;
+        i32 y = std::floor(Input::get_mouse_position().y / 4) - renderer->camera_y;
         
+        lookup_pos.x = std::floor((f32)x / chunk_size);
+        lookup_pos.y = std::floor((f32)y / chunk_size);
+
         for(i32 iy = y - brush_size; iy <= y + brush_size; ++iy)
             for(i32 ix = x - brush_size; ix <= x + brush_size; ++ix)
-                chunks[0]->create_cell(ix, iy, current_item);
+                lookup[lookup_pos]->create_cell(ix - (lookup_pos.x * chunk_size), iy - (lookup_pos.y * chunk_size), current_item);
     }
     else if(Input::is_mouse_released(Input::MouseState::BUTTON_LEFT))
     {
-        chunks[0]->apply_draw();
+        lookup[lookup_pos]->apply_draw();
     }
 
     //Camera movement
