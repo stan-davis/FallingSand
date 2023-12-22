@@ -22,7 +22,7 @@ Chunk::Chunk(i32 x, i32 y, DebugDraw* debug_draw)
     for(u16 y = 0; y < size; y++)
         for(u16 x = 0; x < size; x++)
         {
-            u16 r = rand() % 4 + 1; 
+            u16 r = rand() % 4 + 1;
             i32 n = std::floor(noise.GetNoise((f32)(world_x + x), (f32)(world_y + y))) + multiplier;
 
             if(y > n)
@@ -108,10 +108,7 @@ void Chunk::render(Renderer *renderer)
 
             renderer->draw(world_x + x, world_y + y, c);
         }
-}
 
-void Chunk::render_debug()
-{
     physics_world.DebugDraw();
 }
 

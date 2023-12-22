@@ -17,7 +17,6 @@ class Chunk
 
         void update(f32 dt);
         void render(Renderer *renderer);
-        void render_debug();
         void create_cell(u16 x, u16 y, u8 id);
         void apply_draw();
 

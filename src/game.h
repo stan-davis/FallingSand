@@ -15,7 +15,7 @@ private:
     void render() override;
 
     //Gameplay systems
-    Chunk* chunk;
+    std::vector<Chunk*> chunks;
     
     //Debug
     DebugDraw debug_draw;

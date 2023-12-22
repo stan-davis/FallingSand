@@ -1,11 +1,19 @@
 #include "game.h"
+#include <cstdio>
 
 void Game::ready()
 {
     debug_draw.SetRenderer(renderer.get());
     debug_draw.SetFlags(b2Draw::e_shapeBit);
+    
+    i32 chunk_size = 120;
 
-    chunk = new Chunk(0, 0, &debug_draw);
+    for(i32 x = 0; x < 4; x++)
+        for(i32 y = 0; y < 4; y++)
+        {
+            Chunk* chunk = new Chunk(x * chunk_size, y * chunk_size, &debug_draw);
+            chunks.push_back(chunk);
+        }
 }
 
 void Game::update(f32 delta)
@@ -17,11 +25,11 @@ void Game::update(f32 delta)
         
         for(i32 iy = y - brush_size; iy <= y + brush_size; ++iy)
             for(i32 ix = x - brush_size; ix <= x + brush_size; ++ix)
-                chunk->create_cell(ix, iy, current_item);
+                chunks[0]->create_cell(ix, iy, current_item);
     }
     else if(Input::is_mouse_released(Input::MouseState::BUTTON_LEFT))
     {
-        chunk->apply_draw();
+        chunks[0]->apply_draw();
     }
 
     //Camera movement
@@ -44,13 +52,14 @@ void Game::update(f32 delta)
 
     f32 dt = Time::get_delta_time();
 
-    chunk->update(dt);
+    for(auto& chunk : chunks)
+        chunk->update(dt);
 }
 
 void Game::render()
 {
-    chunk->render(renderer.get());
-    chunk->render_debug();
+    for(auto& chunk : chunks)
+        chunk->render(renderer.get());
 
     ImGui::Begin("Debug");
     ImGui::Text("FPS: %u", Time::get_frames_per_second());
