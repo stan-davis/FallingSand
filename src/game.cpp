@@ -2,7 +2,10 @@
 
 void Game::ready()
 {
-    world = std::make_unique<World>(renderer.get());
+    debug_draw.SetRenderer(renderer.get());
+    debug_draw.SetFlags(b2Draw::e_shapeBit);
+
+    chunk = new Chunk(0, 0, &debug_draw);
 }
 
 void Game::update(f32 delta)
@@ -14,38 +17,40 @@ void Game::update(f32 delta)
         
         for(i32 iy = y - brush_size; iy <= y + brush_size; ++iy)
             for(i32 ix = x - brush_size; ix <= x + brush_size; ++ix)
-                world->create_cell(ix, iy, current_item);
+                chunk->create_cell(ix, iy, current_item);
     }
     else if(Input::is_mouse_released(Input::MouseState::BUTTON_LEFT))
     {
-        world->apply_draw();
+        chunk->apply_draw();
     }
 
     //Camera movement
     if(Input::is_key_held(SDL_SCANCODE_D))
     {
-        renderer->camera_x += 1;
+        renderer->camera_x -= 1;
     }
     else if(Input::is_key_held(SDL_SCANCODE_A))
     {
-        renderer->camera_x -= 1;
+        renderer->camera_x += 1;
     }
     if(Input::is_key_held(SDL_SCANCODE_S))
     {
-        renderer->camera_y += 1;
+        renderer->camera_y -= 1;
     }
     else if(Input::is_key_held(SDL_SCANCODE_W))
     {
-        renderer->camera_y -= 1;
+        renderer->camera_y += 1;
     }
 
-    world->update(Time::get_delta_time());
+    f32 dt = Time::get_delta_time();
+
+    chunk->update(dt);
 }
 
 void Game::render()
 {
-    world->render(renderer.get());
-    world->render_debug();
+    chunk->render(renderer.get());
+    chunk->render_debug();
 
     ImGui::Begin("Debug");
     ImGui::Text("FPS: %u", Time::get_frames_per_second());

@@ -1,16 +1,16 @@
-#include "world.h"
+#include "chunk.h"
 
 #include <cstdio>
 
 #include "smath.h"
 #include <FastNoiseLite.h>
 
-World::World(Renderer* _renderer)
+Chunk::Chunk(i32 x, i32 y, DebugDraw* debug_draw)
 {
-    //Debug draw init
-    debug_draw.SetRenderer(_renderer);
-    debug_draw.SetFlags(b2Draw::e_shapeBit);
-    physics_world.SetDebugDraw(&debug_draw);
+    world_x = x;
+    world_y = y;
+    
+    physics_world.SetDebugDraw(debug_draw);
     
     //Terrain generation
     FastNoiseLite noise;
@@ -23,7 +23,7 @@ World::World(Renderer* _renderer)
         for(u16 x = 0; x < size; x++)
         {
             u16 r = rand() % 4 + 1; 
-            i32 n = std::floor(noise.GetNoise((f32)x, (f32)y)) + multiplier;
+            i32 n = std::floor(noise.GetNoise((f32)(world_x + x), (f32)(world_y + y))) + multiplier;
 
             if(y > n)
                 create_cell(x, y, CellType::GRASS);
@@ -34,7 +34,7 @@ World::World(Renderer* _renderer)
     apply_draw();
 }
 
-void World::create_cell(u16 x, u16 y, u8 id)
+void Chunk::create_cell(u16 x, u16 y, u8 id)
 {
     Color color;
     u8 r = rand() % 64;
@@ -57,7 +57,7 @@ void World::create_cell(u16 x, u16 y, u8 id)
     draw_canvas[y * size + x] = cell;
 }
 
-void World::apply_draw()
+void Chunk::apply_draw()
 {
     if(draw_canvas.empty())
         return;
@@ -94,7 +94,7 @@ void World::apply_draw()
     draw_canvas.fill(Cell());
 }
 
-void World::render(Renderer *renderer)
+void Chunk::render(Renderer *renderer)
 {
     for(u16 y = size - 1; y > 0; --y)
         for(u16 x = size - 1; x > 0; --x)
@@ -106,16 +106,16 @@ void World::render(Renderer *renderer)
             if(canvas_cell.id != CellType::EMPTY)
                 c = canvas_cell.color.to_uint();
 
-            renderer->draw(x, y, c);
+            renderer->draw(world_x + x, world_y + y, c);
         }
 }
 
-void World::render_debug()
+void Chunk::render_debug()
 {
     physics_world.DebugDraw();
 }
 
-void World::update(f32 dt)
+void Chunk::update(f32 dt)
 {
     for(u16 y = size - 1; y > 0; --y)
         for(u16 x = size - 1; x > 0; --x)
@@ -140,7 +140,7 @@ void World::update(f32 dt)
     update_bodies(true);
 }
 
-void World::update_bodies(bool has_ticked)
+void Chunk::update_bodies(bool has_ticked)
 {
     for(auto& rb : rigidbodies)
     {
@@ -174,7 +174,7 @@ void World::update_bodies(bool has_ticked)
     }
 }
 
-void World::update_sand(u16 x, u16 y)
+void Chunk::update_sand(u16 x, u16 y)
 {
     Cell origin = get_cell(x, y);
 
@@ -198,7 +198,7 @@ void World::update_sand(u16 x, u16 y)
     }
 }
 
-void World::update_water(u16 x, u16 y)
+void Chunk::update_water(u16 x, u16 y)
 {
     Cell origin = get_cell(x, y);
     set_updated(x, y, 1);

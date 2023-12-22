@@ -9,11 +9,11 @@
 #include "renderer.h"
 #include "debug_draw.h"
 
-class World
+class Chunk
 {
     public:
-        World(Renderer* _renderer);
-        ~World() = default;
+        Chunk(i32 x, i32 y, DebugDraw* debug_draw);
+        ~Chunk() = default;
 
         void update(f32 dt);
         void render(Renderer *renderer);
@@ -43,8 +43,10 @@ class World
         std::array<u8, area> update_buffer;
         std::array<Cell, area> draw_canvas;
 
+        i32 world_x;
+        i32 world_y;
+
         const b2Vec2 gravity = {0.0, 10.0};
         b2World physics_world = b2World(gravity);
-        DebugDraw debug_draw;
         std::vector<Rigidbody> rigidbodies;
 };

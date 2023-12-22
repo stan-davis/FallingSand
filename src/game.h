@@ -1,7 +1,7 @@
 #pragma once
 
 #include "engine/engine.h"
-#include "engine/world.h"
+#include "engine/chunk.h"
 
 class Game : public Engine
 {
@@ -14,9 +14,11 @@ private:
     void update(f32 delta) override;
     void render() override;
 
-    std::unique_ptr<World> world;
-
-    //Debug GUI
+    //Gameplay systems
+    Chunk* chunk;
+    
+    //Debug
+    DebugDraw debug_draw;
     std::vector<char*> items = {"Empty", "Sand", "Water", "Stone", "Grass", "Dirt"};
     i32 current_item = 0;
     i32 brush_size = 1;
