@@ -1,7 +1,7 @@
 #pragma once
 
 #include <box2d.h>
-#include "../renderer.h"
+#include "renderer.h"
 
 class DebugDraw : public b2Draw
 {
@@ -15,9 +15,9 @@ class DebugDraw : public b2Draw
             for(int i = 0; i < vertexCount; i++)
             {
                 int j = (i + 1) % vertexCount;
-                b2Vec2 v0 = (float)resolution * vertices[i];
-                b2Vec2 v1 = (float)resolution * vertices[j];
-
+                b2Vec2 v0 = (float)resolution * (vertices[i] + GetCameraOffset());
+                b2Vec2 v1 = (float)resolution * (vertices[j] + GetCameraOffset());
+                
                 SDL_RenderDrawLine(renderer->get_renderer(), (int)v0.x, (int)v0.y, (int)v1.x, (int)v1.y);
             }
         };
@@ -29,8 +29,8 @@ class DebugDraw : public b2Draw
             for(int i = 0; i < vertexCount; i++)
             {
                 int j = (i + 1) % vertexCount;
-                b2Vec2 v0 = (float)resolution * vertices[i];
-                b2Vec2 v1 = (float)resolution * vertices[j];
+                b2Vec2 v0 = (float)resolution * (vertices[i] + GetCameraOffset());
+                b2Vec2 v1 = (float)resolution * (vertices[j] + GetCameraOffset());
 
                 SDL_RenderDrawLine(renderer->get_renderer(), (int)v0.x, (int)v0.y, (int)v1.x, (int)v1.y);
             }
@@ -50,8 +50,8 @@ class DebugDraw : public b2Draw
         {
             SDL_SetRenderDrawColor(renderer->get_renderer(), (color.r * 255), (color.g * 255), (color.b * 255), (color.a * 255));
 
-            b2Vec2 n1 = (float)resolution * p1;
-            b2Vec2 n2 = (float)resolution * p2;
+            b2Vec2 n1 = (float)resolution * (p1 + GetCameraOffset());
+            b2Vec2 n2 = (float)resolution * (p2 + GetCameraOffset());
 
             SDL_RenderDrawLine(renderer->get_renderer(), (int)n1.x, (int)n1.y, (int)n2.x, (int)n1.y);
         };
@@ -64,7 +64,7 @@ class DebugDraw : public b2Draw
         void DrawPoint(const b2Vec2& p, float size, const b2Color &color) 
         {
             SDL_SetRenderDrawColor(renderer->get_renderer(), (color.r * 255), (color.g * 255), (color.b * 255), (color.a * 255));
-            SDL_Rect rect = {resolution * (int)p.x, resolution * (int)p.y, (int)size, (int)size};
+            SDL_Rect rect = {resolution * (int)(p.x + GetCameraOffset().x), resolution * (int)(p.y + GetCameraOffset().y), (int)size, (int)size};
             SDL_RenderFillRect(renderer->get_renderer(), &rect);
         };
 
@@ -75,6 +75,11 @@ class DebugDraw : public b2Draw
         }
     
     private:
+        b2Vec2 GetCameraOffset()
+        {
+            return {(f32)renderer->camera_x, (f32)renderer->camera_y};
+        };
+
         Renderer* renderer;
         u8 resolution = 0;
 };

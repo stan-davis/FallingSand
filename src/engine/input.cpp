@@ -1,6 +1,8 @@
 #include "input.h"
 #include <memory>
 
+Input* Input::singleton = new Input();
+
 Input::Input()
 {
     keyboard_state = SDL_GetKeyboardState(&key_length);
@@ -12,52 +14,60 @@ Input::~Input()
 {
     delete[] prev_key_state;
     prev_key_state = nullptr;
+    singleton = nullptr;
 }
 
 void Input::update()
 {
-    mouse_state = SDL_GetMouseState(&mouse_position_x, &mouse_position_y);
+    int px, py;
+    singleton->mouse_state = SDL_GetMouseState(&px, &py);
+    singleton->mouse_position = {(f32)px, (f32)py};
 }
 
 void Input::late_update()
 {
-    memcpy(prev_key_state, keyboard_state, key_length);
-    prev_mouse_state = mouse_state;
+    memcpy(singleton->prev_key_state, singleton->keyboard_state, singleton->key_length);
+    singleton->prev_mouse_state = singleton->mouse_state;
 }
 
 bool Input::is_key_pressed(SDL_Scancode scancode)
 {
-    return !prev_key_state[scancode] && keyboard_state[scancode];
+    return !singleton->prev_key_state[scancode] && singleton->keyboard_state[scancode];
 }
 
 bool Input::is_key_held(SDL_Scancode scancode)
 {
-    return keyboard_state[scancode];
+    return singleton->keyboard_state[scancode];
 }
 
 bool Input::is_key_released(SDL_Scancode scancode)
 {
-    return prev_key_state[scancode] && !keyboard_state[scancode];
+    return singleton->prev_key_state[scancode] && !singleton->keyboard_state[scancode];
 }
 
 bool Input::is_mouse_pressed(MouseState state)
 {
-    u32 mask = get_mouse_state_mask(state);
-    return !(prev_mouse_state & mask) && (mouse_state & mask);
+    u32 mask = singleton->get_mouse_state_mask(state);
+    return !(singleton->prev_mouse_state & mask) && (singleton->mouse_state & mask);
 }
 
 bool Input::is_mouse_held(MouseState state)
 {
-    return (mouse_state & get_mouse_state_mask(state));
+    return (singleton->mouse_state & singleton->get_mouse_state_mask(state));
 }
 
 bool Input::is_mouse_released(MouseState state)
 {
-    u32 mask = get_mouse_state_mask(state);
-    return (prev_mouse_state & mask) && !(mouse_state & mask);
+    u32 mask = singleton->get_mouse_state_mask(state);
+    return (singleton->prev_mouse_state & mask) && !(singleton->mouse_state & mask);
 }
 
-u32 Input::get_mouse_state_mask(MouseState state)
+vec2 Input::get_mouse_position()
+{
+    return singleton->mouse_position;
+}
+
+u32 Input::get_mouse_state_mask(MouseState state) const
 {
     u32 mask = 0;
 

@@ -31,10 +31,6 @@ Renderer::Renderer(u16 _window_width, u16 _window_height, u8 _resolution_scale)
 
 Renderer::~Renderer()
 {
-    ImGui_ImplSDLRenderer2_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
-
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
 }
@@ -63,15 +59,18 @@ void Renderer::end_frame()
     SDL_RenderPresent(renderer);
 }
 
-void Renderer::draw(int x, int y, u32 color)
+void Renderer::draw(u32 x, u32 y, u32 color)
 {
-    if (x >= 0 && x < scaled_width && y >= 0 && y < scaled_height)
+    i32 cx = x + camera_x;
+    i32 cy = y + camera_y;
+
+    if (cx >= 0 && cx < scaled_width && cy >= 0 && cy < scaled_height)
     {
-        frame_buffer[y * scaled_width + x] = color;
+        frame_buffer[cy * scaled_width + cx] = color;
     }
 }
 
-void Renderer::draw_cursor(int x, int y, int brush_size)
+void Renderer::draw_cursor(i32 x, i32 y, i32 brush_size)
 {
     int b = brush_size * resolution_scale;
     int nbx = x - b;

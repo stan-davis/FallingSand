@@ -1,7 +1,8 @@
 #include "world.h"
+
 #include <cstdio>
 
-#include "utils/smath.h"
+#include "smath.h"
 #include <FastNoiseLite.h>
 
 World::World(Renderer* _renderer)
@@ -60,7 +61,7 @@ void World::apply_draw()
 {
     if(draw_canvas.empty())
         return;
-
+    
     b2BodyType type = b2_staticBody;
     bool found = false;
 
@@ -70,10 +71,10 @@ void World::apply_draw()
         
         if(id == CellType::STONE || id == CellType::GRASS || id == CellType::DIRT)
         {
-            found = true;
-
             if(id == CellType::STONE)
                 type = b2_dynamicBody;
+
+            found = true;
         }
     }
 

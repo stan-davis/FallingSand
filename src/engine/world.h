@@ -7,7 +7,7 @@
 #include "cell.h"
 #include "rigidbody.h"
 #include "renderer.h"
-#include "utils/debug_draw.h"
+#include "debug_draw.h"
 
 class World
 {

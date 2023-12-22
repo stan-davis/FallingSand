@@ -1,6 +1,8 @@
 #include "time.h"
 #include <SDL.h>
 
+Time* Time::singleton = new Time(75);
+
 Time::Time(u32 _frame_rate)
 {
     frame_rate = _frame_rate;
@@ -9,24 +11,24 @@ Time::Time(u32 _frame_rate)
 
 void Time::update()
 {
-    now = static_cast<f32>(SDL_GetTicks());
-    dt = (now - last) / 1000.0;
-    last = now;
-    ++frame_count;
+    singleton->now = static_cast<f32>(SDL_GetTicks());
+    singleton->dt = (singleton->now - singleton->last) / 1000.0;
+    singleton->last = singleton->now;
+    ++singleton->frame_count;
 
-    if(now - frame_last >= 1000.0)
+    if(singleton->now - singleton->frame_last >= 1000.0)
     {
-        frame_rate = frame_count;
-        frame_count = 0;
-        frame_last = now;
+        singleton->frame_rate = singleton->frame_count;
+        singleton->frame_count = 0;
+        singleton->frame_last = singleton->now;
     }
 }
 
 void Time::late_update()
 {
-    frame_time = static_cast<f32>(SDL_GetTicks()) - now;
-    if(frame_delay > frame_time)
+    singleton->frame_time = static_cast<f32>(SDL_GetTicks()) - singleton->now;
+    if(singleton->frame_delay > singleton->frame_time)
     {
-        SDL_Delay(frame_delay - frame_time);
+        SDL_Delay(singleton->frame_delay - singleton->frame_time);
     }
 }

@@ -5,7 +5,7 @@
 #include <imgui_impl_sdlrenderer2.h>
 #include <SDL.h>
 
-#include "utils/types.h"
+#include "types.h"
 
 class Renderer
 {
@@ -16,13 +16,16 @@ class Renderer
         void start_frame();
         void render();
         void end_frame();
-        
-        void draw(int x, int y, u32 color);
-        void draw_cursor(int x, int y, int brush_size);
+
+        void draw(u32 x, u32 y, u32 color);
+        void draw_cursor(i32 x, i32 y, i32 brush_size);
         
         SDL_Renderer* get_renderer() { return renderer; };
         SDL_Window* get_window() { return window; };
         u8 get_resolution_scale() { return resolution_scale; };
+
+        i32 camera_x = 0;
+        i32 camera_y = 0;
         
     private:
         void clear_buffer();

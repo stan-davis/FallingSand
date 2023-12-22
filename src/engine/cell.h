@@ -1,5 +1,5 @@
 #pragma once
-#include "utils/types.h"
+#include "types.h"
 
 typedef struct Color
 {

@@ -1,7 +1,7 @@
 #include "rigidbody.h"
 
 #include <MarchingSquares.h>
-#include "utils/douglas_peucker.h"
+#include "douglas_peucker.h"
 #include <polypartition.h>
 
 Rigidbody::Rigidbody(std::vector<Cell> _cells, b2BodyType type, b2World& world)
