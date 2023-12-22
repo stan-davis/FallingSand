@@ -6,38 +6,23 @@
 
 World::World(Renderer* _renderer)
 {
+    //Debug draw init
     debug_draw.SetRenderer(_renderer);
     debug_draw.SetFlags(b2Draw::e_shapeBit);
     physics_world.SetDebugDraw(&debug_draw);
     
-    //Ground body
-    b2BodyDef def;
-    def.type = b2_staticBody;
-    def.position.Set(0.0, 121.0);
-    b2Body* body = physics_world.CreateBody(&def);
-
-    b2PolygonShape shape;
-    shape.SetAsBox(120,1);
-
-    b2FixtureDef fixture;
-    fixture.shape = &shape;
-    fixture.density = 1.0;
-    fixture.friction = 0.3;
-
-    body->CreateFixture(&fixture);
-
-    //Terrain
+    //Terrain generation
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    
+    u16 amplitude = 10;
+    i32 multiplier = (amplitude * 0.5) * amplitude;
 
     for(u16 y = 0; y < size; y++)
         for(u16 x = 0; x < size; x++)
         {
-            u16 amplitude = 10.0;
-            u16 r = rand() % 4 + 1;
-            i32 n1 = std::floor((noise.GetNoise((f32)x, (f32)y) + (amplitude * 0.5)) * amplitude);
-            i32 n2 = std::floor((noise.GetNoise((f32)x + 0.01, (f32)y + 0.01) + (amplitude * 0.5)) * amplitude);
-            i32 n = n1 + n2;
+            u16 r = rand() % 4 + 1; 
+            i32 n = std::floor(noise.GetNoise((f32)x, (f32)y)) + multiplier;
 
             if(y > n)
                 create_cell(x, y, CellType::GRASS);
@@ -46,14 +31,6 @@ World::World(Renderer* _renderer)
         }
 
     apply_draw();
-}
-
-void World::set_cell(u16 x, u16 y, Cell cell)
-{
-    if(!in_bounds(x,y))
-        return;
-    
-    cells[y * size + x] = cell;
 }
 
 void World::create_cell(u16 x, u16 y, u8 id)
@@ -79,65 +56,41 @@ void World::create_cell(u16 x, u16 y, u8 id)
     draw_canvas[y * size + x] = cell;
 }
 
-Cell World::get_cell(u16 x, u16 y)
-{
-    return cells[y * size + x];
-}
-
-bool World::is_empty(u16 x, u16 y)
-{
-    return cells[y * size + x].id == 0;
-}
-
-bool World::in_bounds(u16 x, u16 y)
-{
-    return x >= 0 && x < size && y >= 0 && y < size;
-}
-
-void World::set_updated(u16 x, u16 y, u8 value)
-{
-    update_buffer[y * size + x] = value;
-}
-
-bool World::is_updated(u16 x, u16 y)
-{
-    return update_buffer[y * size + x] > 0;
-}
-
 void World::apply_draw()
 {
     if(draw_canvas.empty())
         return;
 
-    //Create rigidbodies
-    Cell* arr = new Cell[area];
+    b2BodyType type = b2_staticBody;
     bool found = false;
 
-    for(u16 i = 0; i < area; i++)
+    for(auto& cell : draw_canvas)
     {
-        if(draw_canvas[i].id == CellType::STONE)
+        u8 id = cell.id;
+        
+        if(id == CellType::STONE || id == CellType::GRASS || id == CellType::DIRT)
         {
-            arr[i] = draw_canvas[i];
             found = true;
+
+            if(id == CellType::STONE)
+                type = b2_dynamicBody;
         }
     }
 
     if(found)
     {
-        Rigidbody rb = Rigidbody(arr, size, physics_world);
+        std::vector<Cell> data(draw_canvas.begin(), draw_canvas.end());
+        Rigidbody rb = Rigidbody(data, type, physics_world);
         rigidbodies.push_back(rb);
     }
 
-    //Apply non-empty cells
     for(u16 i = 0; i < area; i++)
     {
         if(draw_canvas[i].id != CellType::EMPTY)
             cells[i] = draw_canvas[i];
     }
     
-    //Clear draw canvas
-    for(auto& cell : draw_canvas)
-        cell = Cell();
+    draw_canvas.fill(Cell());
 }
 
 void World::render(Renderer *renderer)
@@ -159,37 +112,6 @@ void World::render(Renderer *renderer)
 void World::render_debug()
 {
     physics_world.DebugDraw();
-}
-
-void World::update_bodies(bool has_ticked)
-{
-    for(auto& rb : rigidbodies)
-    {
-        f32 a = rb.body->GetAngle();
-        f32 s = std::sin(a);
-        f32 c = std::cos(a);
-
-        for(u16 y = size - 1; y > 0; --y)
-            for(u16 x = size - 1; x > 0; --x)
-            {
-                const Cell& cell = rb.cells[y * size + x];
-                
-                if(cell.id == CellType::EMPTY)
-                    continue;
-                
-                f32 nx = x * c - y * s;
-                f32 ny = x * s + y * c;
-
-                b2Vec2 p = rb.body->GetPosition();
-                u16 px = (u16)(p.x + nx);
-                u16 py = (u16)(p.y + ny);
-
-                if(has_ticked)
-                    set_cell(px, py, cell);
-                else
-                    set_cell(px, py, Cell());
-            }
-    }
 }
 
 void World::update(f32 dt)
@@ -215,6 +137,40 @@ void World::update(f32 dt)
     update_bodies(false);
     physics_world.Step(0.016, 8, 3);
     update_bodies(true);
+}
+
+void World::update_bodies(bool has_ticked)
+{
+    for(auto& rb : rigidbodies)
+    {
+        if(rb.body->GetType() == b2_staticBody)
+            continue;
+
+        f32 a = rb.body->GetAngle();
+        f32 s = std::sin(a);
+        f32 c = std::cos(a);
+        
+        for(u16 y = size - 1; y > 0; --y)
+            for(u16 x = size - 1; x > 0; --x)
+            {
+                const Cell& cell = rb.cells[y * size + x];
+                
+                if(cell.id == CellType::EMPTY)
+                    continue;
+                
+                f32 nx = x * c - y * s;
+                f32 ny = x * s + y * c;
+
+                b2Vec2 p = rb.body->GetPosition();
+                u16 px = (u16)(p.x + nx);
+                u16 py = (u16)(p.y + ny);
+
+                if(has_ticked)
+                    set_cell(px, py, cell);
+                else
+                    set_cell(px, py, Cell());
+            }
+    }
 }
 
 void World::update_sand(u16 x, u16 y)

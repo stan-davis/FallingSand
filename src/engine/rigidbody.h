@@ -7,9 +7,9 @@
 class Rigidbody
 {
     public:
-        Rigidbody(Cell* _cells, int size, b2World& world);
+        Rigidbody(std::vector<Cell> _cells, b2BodyType type, b2World& world);
         ~Rigidbody() = default;
         
         b2Body* body = nullptr;
-        Cell* cells;
+        std::vector<Cell> cells;
 };

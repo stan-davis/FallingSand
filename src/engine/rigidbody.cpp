@@ -4,19 +4,19 @@
 #include "utils/douglas_peucker.h"
 #include <polypartition.h>
 
-Rigidbody::Rigidbody(Cell* _cells, int size, b2World& world)
+Rigidbody::Rigidbody(std::vector<Cell> _cells, b2BodyType type, b2World& world)
 {
     //Init
-    const int area = size * size;
-    cells = new Cell[area];
     cells = _cells;
-    
+    const int area = cells.size();
+    const int size = std::sqrt(area);
+
     unsigned char* data = new unsigned char[area];
     memset(data, 0, area * sizeof(unsigned char));
 
     for(int i = 0; i < area; i++)
     {
-        if(cells[i].id == CellType::STONE)
+        if(cells[i].id != CellType::EMPTY)
             data[i] = 1;
     }
 
@@ -76,7 +76,7 @@ Rigidbody::Rigidbody(Cell* _cells, int size, b2World& world)
 
     //Create physics body
     b2BodyDef def;
-    def.type = b2_dynamicBody;
+    def.type = type;
     def.position.Set(0.0, 0.0);
     body = world.CreateBody(&def);
     
