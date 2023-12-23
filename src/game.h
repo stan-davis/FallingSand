@@ -27,7 +27,7 @@ private:
     
     //Debug
     DebugDraw debug_draw;
-    std::vector<char*> items = {"Empty", "Sand", "Water", "Stone", "Grass", "Dirt"};
+    std::vector<const char*> items = {"Empty", "Sand", "Water", "Stone", "Grass", "Dirt"};
     i32 current_item = 0;
     i32 brush_size = 1;
 };

@@ -37,7 +37,7 @@ Chunk::Chunk(i32 x, i32 y, DebugDraw* debug_draw)
 
 Chunk* Chunk::get_neighbour(i32 x, i32 y)
 {
-    vec2i pos = {std::floor((f32)x / size), std::floor((f32)y / size)};
+    vec2i pos = {(i32)std::floor((f32)x / size), (i32)std::floor((f32)y / size)};
 
     auto itr = lookup.find(pos);
     auto end = lookup.end();
@@ -50,7 +50,7 @@ void Chunk::set_neighbour(Chunk* neighbour)
 	if (neighbour == nullptr)
 		return;
 
-	vec2i pos = {std::floor((f32)neighbour->get_world_position().x / size), std::floor((f32)neighbour->get_world_position().y / size)};
+	vec2i pos = {(i32)std::floor((f32)neighbour->get_world_position().x / size), (i32)std::floor((f32)neighbour->get_world_position().y / size)};
 	lookup.insert({ pos, neighbour });
 	neighbours.push_back(neighbour);
 }
@@ -60,7 +60,6 @@ vec2i Chunk::get_cell_chunk_position(i32 x, i32 y)
     return { x - world_x , y - world_y };
 }
 
-///TODO: this will never go negative because it is an unsigned int (replace all functions with i32)
 Cell Chunk::get_cell(i32 x, i32 y)
 {
     if(in_bounds(x, y))
@@ -98,8 +97,6 @@ void Chunk::set_cell(i32 x, i32 y, Cell cell)
         }
     }
 }
-
-
 
 bool Chunk::is_empty(i32 x, i32 y)
 {
@@ -184,8 +181,8 @@ void Chunk::render(Renderer *renderer)
 {
     for(u32 i = area; i > 0; --i)
     {
-        u32 x = std::floor(i % size);
-        u32 y = std::floor(i / size);
+        u32 x = std::round(i % size);
+        u32 y = std::round(i / size);
 
         Cell buffer_cell = get_cell(x, y);
         Cell canvas_cell = draw_canvas[i];
@@ -205,8 +202,8 @@ void Chunk::update(f32 dt)
 {
     for(u32 i = area; i > 0; --i)
     {
-        u32 x = std::floor(i % size);
-        u32 y = std::floor(i / size);
+        u32 x = std::round(i % size);
+        u32 y = std::round(i / size);
 
         if(is_updated(x,y))
             continue;
