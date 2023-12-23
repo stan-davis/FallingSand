@@ -15,10 +15,10 @@ Chunk::Chunk(i32 x, i32 y, DebugDraw* debug_draw)
     //Terrain generation
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    u16 amplitude = 20;
+    u32 amplitude = 20;
 
-    for(u16 y = 0; y < size; y++)
-        for(u16 x = 0; x < size; x++)
+    for(i32 y = 0; y < size; y++)
+        for(i32 x = 0; x < size; x++)
         {
             i32 tx = world_x + x;
             i32 ty = world_y + y;
@@ -60,7 +60,8 @@ vec2i Chunk::get_cell_chunk_position(i32 x, i32 y)
     return { x - world_x , y - world_y };
 }
 
-Cell Chunk::get_cell(u16 x, u16 y)
+///TODO: this will never go negative because it is an unsigned int (replace all functions with i32)
+Cell Chunk::get_cell(i32 x, i32 y)
 {
     if(in_bounds(x, y))
     {
@@ -79,7 +80,7 @@ Cell Chunk::get_cell(u16 x, u16 y)
     return Cell();
 }
 
-void Chunk::set_cell(u16 x, u16 y, Cell cell)
+void Chunk::set_cell(i32 x, i32 y, Cell cell)
 {
     if(in_bounds(x, y))
     {
@@ -100,7 +101,7 @@ void Chunk::set_cell(u16 x, u16 y, Cell cell)
 
 
 
-bool Chunk::is_empty(u16 x, u16 y)
+bool Chunk::is_empty(i32 x, i32 y)
 {
     if(in_bounds(x, y))
     {
@@ -119,7 +120,7 @@ bool Chunk::is_empty(u16 x, u16 y)
     return false;
 }
 
-void Chunk::create_cell(u16 x, u16 y, u8 id)
+void Chunk::create_cell(i32 x, i32 y, u8 id)
 {
     Color color;
     u8 r = rand() % 64;
@@ -170,7 +171,7 @@ void Chunk::apply_draw()
         rigidbodies.push_back(rb);
     }
 
-    for(u16 i = 0; i < area; i++)
+    for(i32 i = 0; i < area; i++)
     {
         if(draw_canvas[i].id != CellType::EMPTY)
             cells[i] = draw_canvas[i];
@@ -252,8 +253,8 @@ void Chunk::update_bodies(bool has_ticked)
             f32 ny = x * s + y * c;
 
             b2Vec2 p = rb.body->GetPosition();
-            u16 px = (u16)(p.x + nx) - world_x;
-            u16 py = (u16)(p.y + ny) - world_y;
+            i32 px = (i32)(p.x + nx) - world_x;
+            i32 py = (i32)(p.y + ny) - world_y;
 
             if(has_ticked)
                 set_cell(px, py, cell);
@@ -263,7 +264,7 @@ void Chunk::update_bodies(bool has_ticked)
     }
 }
 
-void Chunk::update_sand(u16 x, u16 y)
+void Chunk::update_sand(i32 x, i32 y)
 {
     Cell origin = get_cell(x, y);
     
@@ -287,7 +288,7 @@ void Chunk::update_sand(u16 x, u16 y)
     }
 }
 
-void Chunk::update_water(u16 x, u16 y)
+void Chunk::update_water(i32 x, i32 y)
 {
     Cell origin = get_cell(x, y);
     set_updated(x, y, 1);
