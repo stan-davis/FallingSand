@@ -16,9 +16,10 @@ private:
     void update(f32 delta) override;
     void render() override;
 
+    void set_chunk_neighbours();
+    
     //Gameplay systems
-    u8 world_size = 2;
-    u32 chunk_size = 120;
+    u8 world_size = 1;
 
     std::vector<Chunk*> chunks;
     std::unordered_map<vec2i, Chunk*, pair_hash> lookup;

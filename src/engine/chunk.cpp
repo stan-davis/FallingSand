@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <FastNoiseLite.h>
+#include <algorithm>
 
 Chunk::Chunk(i32 x, i32 y, DebugDraw* debug_draw)
 {
@@ -14,10 +15,7 @@ Chunk::Chunk(i32 x, i32 y, DebugDraw* debug_draw)
     //Terrain generation
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    
-    u16 amplitude = 40;
-    u8 octaves = 5;
-    f32 lacunarity = 0.75;
+    u16 amplitude = 20;
 
     for(u16 y = 0; y < size; y++)
         for(u16 x = 0; x < size; x++)
@@ -26,14 +24,7 @@ Chunk::Chunk(i32 x, i32 y, DebugDraw* debug_draw)
             i32 ty = world_y + y;
 
             u16 r = rand() % 4 + 1;
-            i32 depth = 0;
-
-            for(u8 i = 1; i < octaves; i++)
-            {
-                depth += std::ceil(noise.GetNoise((f32)tx / i * lacunarity, (f32)ty / i * lacunarity) * amplitude);
-            }
-
-            depth = std::ceil(depth / octaves);
+            i32 depth = std::ceil(noise.GetNoise((f32)tx, 0.0f) * amplitude);
 
             if(ty > depth)
                 create_cell(x, y, CellType::GRASS);
@@ -42,6 +33,90 @@ Chunk::Chunk(i32 x, i32 y, DebugDraw* debug_draw)
         }
 
     apply_draw();
+}
+
+Chunk* Chunk::get_neighbour(i32 x, i32 y)
+{
+    vec2i pos = {std::floor((f32)x / size), std::floor((f32)y / size)};
+
+    auto itr = lookup.find(pos);
+    auto end = lookup.end();
+    
+    return itr != end ? itr->second : nullptr;
+}
+
+void Chunk::set_neighbour(Chunk* neighbour)
+{
+	if (neighbour == nullptr)
+		return;
+
+	vec2i pos = {std::floor((f32)neighbour->get_world_position().x / size), std::floor((f32)neighbour->get_world_position().y / size)};
+	lookup.insert({ pos, neighbour });
+	neighbours.push_back(neighbour);
+}
+
+vec2i Chunk::get_cell_chunk_position(i32 x, i32 y)
+{
+    return { x - world_x , y - world_y };
+}
+
+Cell Chunk::get_cell(u16 x, u16 y)
+{
+    if(in_bounds(x, y))
+    {
+        return cells[y * size + x]; 
+    }
+
+    i32 world_pos_x = x + world_x;
+    i32 world_pos_y = y + world_y;
+        
+    if(Chunk* dst = get_neighbour(world_pos_x, world_pos_y))
+    {
+        vec2i to = dst->get_cell_chunk_position(world_pos_x, world_pos_y);
+        return dst->get_cell(to.x, to.y);
+    }
+    
+    return Cell();
+}
+
+void Chunk::set_cell(u16 x, u16 y, Cell cell)
+{
+    if(in_bounds(x, y))
+    {
+        cells[y * size + x] = cell;
+    }
+    else
+    {
+        i32 world_pos_x = x + world_x;
+        i32 world_pos_y = y + world_y;
+        
+        if(Chunk* dst = get_neighbour(world_pos_x, world_pos_y))
+        {
+            vec2i to = dst->get_cell_chunk_position(world_pos_x, world_pos_y);
+            dst->set_cell(to.x, to.y, cell); ///+1 for testing ONLY
+        }
+    }
+}
+
+
+
+bool Chunk::is_empty(u16 x, u16 y)
+{
+    if(in_bounds(x, y))
+    {
+        return cells[y * size + x].id == 0;
+    }
+
+    i32 world_pos_x = x + world_x;
+    i32 world_pos_y = y + world_y;
+        
+    if(Chunk* dst = get_neighbour(world_pos_x, world_pos_y))
+    {
+        vec2i to = dst->get_cell_chunk_position(world_pos_x, world_pos_y);
+        return dst->get_cell(to.x, to.y).id == 0;
+    }
+    
+    return false;
 }
 
 void Chunk::create_cell(u16 x, u16 y, u8 id)
@@ -106,42 +181,47 @@ void Chunk::apply_draw()
 
 void Chunk::render(Renderer *renderer)
 {
-    for(u16 y = size - 1; y > 0; --y)
-        for(u16 x = size - 1; x > 0; --x)
-        {
-            Cell buffer_cell = get_cell(x, y);
-            Cell canvas_cell = draw_canvas[y * size + x];
-            u32 c = buffer_cell.color.to_uint();
+    for(u32 i = area; i > 0; --i)
+    {
+        u32 x = std::floor(i % size);
+        u32 y = std::floor(i / size);
 
-            if(canvas_cell.id != CellType::EMPTY)
-                c = canvas_cell.color.to_uint();
+        Cell buffer_cell = get_cell(x, y);
+        Cell canvas_cell = draw_canvas[i];
+        u32 c = buffer_cell.color.to_uint();
 
-            renderer->draw(world_x + x, world_y + y, c);
-        }
+        if(canvas_cell.id != CellType::EMPTY)
+            c = canvas_cell.color.to_uint();
 
+        renderer->draw(world_x + x, world_y + y, c);
+    }
+    
     physics_world.DebugDraw();
 }
 
+///TODO: still some issues with in-place updates
 void Chunk::update(f32 dt)
 {
-    for(u16 y = size - 1; y > 0; --y)
-        for(u16 x = size - 1; x > 0; --x)
+    for(u32 i = area; i > 0; --i)
+    {
+        u32 x = std::floor(i % size);
+        u32 y = std::floor(i / size);
+
+        if(is_updated(x,y))
+            continue;
+        
+        const Cell& cell = get_cell(x, y);
+
+        switch(cell.id)
         {
-            if(is_updated(x,y))
-                continue;
-
-            const Cell& cell = get_cell(x, y);
-
-            switch(cell.id)
-            {
-                case CellType::SAND: update_sand(x, y); break;
-                case CellType::WATER: update_water(x, y); break;
-                default: break;
-            }
+            case CellType::SAND: update_sand(x, y); break;
+            case CellType::WATER: update_water(x, y); break;
+            default: break;
         }
-    
-    memset(&update_buffer, 0, area);
+    }
 
+    memset(&update_buffer, 0, area);
+    
     update_bodies(false);
     physics_world.Step(0.016, 8, 3);
     update_bodies(true);
@@ -158,46 +238,48 @@ void Chunk::update_bodies(bool has_ticked)
         f32 s = std::sin(a);
         f32 c = std::cos(a);
         
-        for(u16 y = size - 1; y > 0; --y)
-            for(u16 x = size - 1; x > 0; --x)
-            {
-                const Cell& cell = rb.cells[y * size + x];
-                
-                if(cell.id == CellType::EMPTY)
-                    continue;
-                
-                f32 nx = x * c - y * s;
-                f32 ny = x * s + y * c;
+        for(u32 i = area; i > 0; --i)
+        {
+            u32 x = std::floor(i % size);
+            u32 y = std::floor(i / size);
 
-                b2Vec2 p = rb.body->GetPosition();
-                u16 px = (u16)(p.x + nx) - world_x;
-                u16 py = (u16)(p.y + ny) - world_y;
+            const Cell& cell = rb.cells[i];
+            
+            if(cell.id == CellType::EMPTY)
+                continue;
+            
+            f32 nx = x * c - y * s;
+            f32 ny = x * s + y * c;
 
-                if(has_ticked)
-                    set_cell(px, py, cell);
-                else
-                    set_cell(px, py, Cell());
-            }
+            b2Vec2 p = rb.body->GetPosition();
+            u16 px = (u16)(p.x + nx) - world_x;
+            u16 py = (u16)(p.y + ny) - world_y;
+
+            if(has_ticked)
+                set_cell(px, py, cell);
+            else
+                set_cell(px, py, Cell());
+        }
     }
 }
 
 void Chunk::update_sand(u16 x, u16 y)
 {
     Cell origin = get_cell(x, y);
-
-    if(is_empty(x, y + 1) && in_bounds(x, y + 1))
+    
+    if(is_empty(x, y + 1))
     {
         Cell target = get_cell(x, y + 1);
         set_cell(x, y + 1, origin);
         set_cell(x, y, target);
     }
-    else if(is_empty(x - 1, y + 1) && in_bounds(x - 1, y + 1))
+    else if(is_empty(x - 1, y + 1))
     {
         Cell target = get_cell(x - 1, y + 1);
         set_cell(x - 1, y + 1, origin);
         set_cell(x, y, target);
     }
-    else if(is_empty(x + 1, y + 1) && in_bounds(x + 1, y + 1))
+    else if(is_empty(x + 1, y + 1))
     {
         Cell target = get_cell(x + 1, y + 1);
         set_cell(x + 1, y + 1, origin);
@@ -212,31 +294,31 @@ void Chunk::update_water(u16 x, u16 y)
     
     i8 sign = (rand() % 2) * 2 - 1;
 
-    if(is_empty(x, y + 1) && in_bounds(x, y + 1))
+    if(is_empty(x, y + 1))
     {
         Cell target = get_cell(x, y + 1);
         set_cell(x, y + 1, origin);
         set_cell(x, y, target);
     }
-    else if(is_empty(x + sign, y + 1) && in_bounds(x + sign, y + 1))
+    else if(is_empty(x + sign, y + 1))
     {
         Cell target = get_cell(x + sign, y + 1);
         set_cell(x + sign, y + 1, origin);
         set_cell(x, y, target);
     }
-    else if(is_empty(x - sign, y + 1) && in_bounds(x - sign, y + 1))
+    else if(is_empty(x - sign, y + 1))
     {
         Cell target = get_cell(x - sign, y + 1);
         set_cell(x - sign, y + 1, origin);
         set_cell(x, y, target);
     }
-    else if(is_empty(x + sign, y) && in_bounds(x + sign, y))
+    else if(is_empty(x + sign, y))
     {
         Cell target = get_cell(x + sign, y);
         set_cell(x + sign, y, origin);
         set_cell(x, y, target);
     }
-    else if(is_empty(x - sign, y) && in_bounds(x - sign, y))
+    else if(is_empty(x - sign, y))
     {
         Cell target = get_cell(x - sign, y);
         set_cell(x - sign, y, origin);

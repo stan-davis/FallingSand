@@ -61,8 +61,8 @@ void Renderer::end_frame()
 
 void Renderer::draw(u32 x, u32 y, u32 color)
 {
-    i32 cx = x + camera_x;
-    i32 cy = y + camera_y;
+    i32 cx = x - camera_x;
+    i32 cy = y - camera_y;
 
     if (cx >= 0 && cx < scaled_width && cy >= 0 && cy < scaled_height)
     {

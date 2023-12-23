@@ -16,7 +16,7 @@ typedef struct vec2i
 
     vec2i operator+(const vec2i& v) const { return {x + v.x, y + v.y}; };
 	vec2i operator-(const vec2i& v) const { return {x - v.x, y - v.y}; };
-	vec2i operator*(const vec2i& v) const { return {x - v.x, y - v.y}; };
+	vec2i operator*(const vec2i& v) const { return {x * v.x, y * v.y}; };
 	void operator+=(const vec2i& v) { x += v.x; y += v.y; };
 	void operator-=(const vec2i& v) { x -= v.x; y -= v.y; };
 	void operator*=(const vec2i& v) { x *= v.x; y *= v.y; };
