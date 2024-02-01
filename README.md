@@ -1,6 +1,8 @@
 # FallingSand
 ## A falling-sand simulation/game written in C++ using SDL2 & Box2D
 
+![Screenshot](screen.jpg)
+
 This is a work-in-progress project that implements a falling-sand style of cellular automata with the Box2D physics system. It has a graphical interface using ImGUI and basic terrain generation with FastNoiseLite.
 
 ## Controls
