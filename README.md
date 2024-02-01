@@ -10,4 +10,4 @@ This is a work-in-progress project that implements a falling-sand style of cellu
 - WASD to move around the world
 
 ## Note
-This is not intended to represent a finished product. There is currently weird behaviour with chunk interactions. Modifications to the Makefile are required to build the project currently.
+This is not intended to represent a finished product. There is currently weird behaviour with chunk interactions.
